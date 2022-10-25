@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 public class Client {
     public static void main(String[] args) throws IOException {
@@ -15,6 +14,7 @@ public class Client {
                     "Usage: java EchoClient <host name> <port number>");
             System.exit(1);
         }
+
 
         String hostName = args[0];
         int portNumber = Integer.parseInt(args[1]);
@@ -27,6 +27,18 @@ public class Client {
         ) {
             InputHandler input = new InputHandler(out);
             input.start();
+
+            Runtime.getRuntime().addShutdownHook(
+                    new Thread(() -> {
+                        out.println("quit");
+                        try {
+                            chatRoomSocket.close();
+                        }
+                        catch (Exception e) {
+                            e.getMessage();
+                        }
+                    }
+            ));
 
             String msg;
             while ((msg = in.readLine()) != null) {

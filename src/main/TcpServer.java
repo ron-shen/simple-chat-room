@@ -39,13 +39,15 @@ public class TcpServer {
         connectedServices.put(client.getId(), client);
     }
 
+    public static void remove(ChatService client){
+        connectedServices.remove(client.getId());
+    }
+
     public static void broadcastMsg(ChatService issuer, String msg){
-        String fullMsg = issuer.getClientName() + ":" + msg;
         for (Long key : connectedServices.keySet()) {
             if(key != issuer.getId()){
                 ChatService client = connectedServices.get(key);
-                PrintWriter out = client.getOut();
-                out.println(fullMsg);
+                client.getOut().println(msg);
             }
         }
     }
@@ -85,13 +87,25 @@ class ChatService extends Thread{
         System.out.println("thread " + this.getId() + " started...");
         try {
             String inputLine;
+            String msg;
             out.println("Please enter your name");
             inputLine = in.readLine();
             setClientName(inputLine);
-            out.println("Welcome " + inputLine + "!");
             TcpServer.register(this);
+            TcpServer.broadcastMsg(this, clientName + " joins the chat room!");
             while ((inputLine = in.readLine()) != null) {
-                TcpServer.broadcastMsg(this, inputLine);
+                if (inputLine.equals("quit")){
+                    msg = clientName + " leaves the chat room...";
+                    TcpServer.broadcastMsg(this, msg);
+                    TcpServer.remove(this);
+                    clientSocket.close();
+                    System.out.println("Thread " + this.getId() + " closed...");
+                    break;
+                }
+                else{
+                    msg = clientName + ":" + inputLine;
+                    TcpServer.broadcastMsg(this, msg);
+                }
             }
         }
         catch(IOException e){
